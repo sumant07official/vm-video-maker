@@ -350,8 +350,114 @@ textarea::placeholder{color:rgba(255,255,255,0.18)}
 // Auto-detect: local ya online dono pe kaam karega
 const SERVER = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:8765'
-  : window.location.origin;  // Render pe same domain
+  : window.location.origin;
 let srvOnline = false;
+
+// ═══════════════════════════════════════════
+// AUTH SYSTEM - Complete
+// ═══════════════════════════════════════════
+let AUTH_TOKEN = localStorage.getItem('vm_token') || null;
+let AUTH_USER  = localStorage.getItem('vm_user')  || null;
+
+function showLogin() {
+  AUTH_TOKEN = null; AUTH_USER = null;
+  localStorage.removeItem('vm_token');
+  localStorage.removeItem('vm_user');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('user-badge').style.display   = 'none';
+}
+
+function showApp(username) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('user-badge').style.display   = 'flex';
+  document.getElementById('u-name').textContent = username;
+}
+
+async function checkExistingAuth() {
+  if (!AUTH_TOKEN) { showLogin(); return; }
+  try {
+    const r = await fetch(SERVER + '/check-auth', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({token: AUTH_TOKEN})
+    });
+    const d = await r.json();
+    if (d.valid) showApp(AUTH_USER);
+    else showLogin();
+  } catch(e) { showLogin(); }
+}
+
+async function doLogin() {
+  const user = document.getElementById('l-user').value.trim();
+  const pass = document.getElementById('l-pass').value;
+  const err  = document.getElementById('l-err');
+  if (!user||!pass) { err.textContent='Username aur password dono bharo!'; return; }
+  err.style.color='rgba(255,255,255,0.4)'; err.textContent='Checking...';
+  try {
+    const r = await fetch(SERVER+'/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, password:pass})
+    });
+    const d = await r.json();
+    if (d.success) {
+      AUTH_TOKEN=d.token; AUTH_USER=d.username;
+      localStorage.setItem('vm_token', AUTH_TOKEN);
+      localStorage.setItem('vm_user',  AUTH_USER);
+      showApp(AUTH_USER);
+      err.textContent='';
+      toast('Welcome '+AUTH_USER+'! ✅','#00CC66');
+    } else {
+      err.style.color='#FF6666'; err.textContent='❌ '+d.error;
+    }
+  } catch(e) {
+    err.style.color='#FF6666';
+    err.textContent='❌ Server error — vm_server.py chalao!';
+  }
+}
+
+async function doLogout() {
+  if (!confirm('Logout karna chahte ho?')) return;
+  try {
+    await fetch(SERVER+'/logout', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({token:AUTH_TOKEN})
+    });
+  } catch(e) {}
+  showLogin();
+}
+
+function openChPass() {
+  ['cp-old','cp-new','cp-conf'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cp-msg').textContent='';
+  document.getElementById('chpass-modal').classList.add('open');
+}
+function closeChPass() {
+  document.getElementById('chpass-modal').classList.remove('open');
+}
+
+async function doChangePass() {
+  const oldP=document.getElementById('cp-old').value;
+  const newP=document.getElementById('cp-new').value;
+  const conf=document.getElementById('cp-conf').value;
+  const msg=document.getElementById('cp-msg');
+  if(!oldP||!newP||!conf){msg.textContent='Sab fields bharo!';return;}
+  if(newP!==conf){msg.style.color='#FF6666';msg.textContent='❌ Passwords match nahi!';return;}
+  if(newP.length<6){msg.style.color='#FF6666';msg.textContent='❌ Min 6 characters chahiye!';return;}
+  msg.style.color='rgba(255,255,255,0.4)';msg.textContent='Changing...';
+  try {
+    const r=await fetch(SERVER+'/change-password',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:AUTH_TOKEN, old_password:oldP, new_password:newP})
+    });
+    const d=await r.json();
+    if(d.success){
+      msg.style.color='#00CC66'; msg.textContent='✅ '+d.message;
+      setTimeout(closeChPass,2000);
+      toast('✅ Password changed!','#00CC66');
+    } else {
+      msg.style.color='#FF6666'; msg.textContent='❌ '+d.error;
+    }
+  } catch(e){ msg.style.color='#FF6666'; msg.textContent='❌ Server error!'; }
+}
 
 const GODS = {
   monday:[
