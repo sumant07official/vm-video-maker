@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔱 VM - Video Maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--gold:#FFD700;--saffron:#FF6B00;--red:#8B0000;--green:#00CC66;--bg:#050208}
+body{background:var(--bg);font-family:sans-serif;min-height:100vh;color:#fff}
+#bgc{position:fixed;inset:0;z-index:0}
+.app{position:relative;z-index:10;max-width:820px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:14px}
+.hdr{text-align:center;padding:12px 0}
+.hom{font-size:2.5rem;color:var(--gold);text-shadow:0 0 25px var(--gold);animation:op 2s ease-in-out infinite;display:block}
+@keyframes op{0%,100%{text-shadow:0 0 20px var(--gold)}50%{text-shadow:0 0 50px var(--gold),0 0 80px var(--saffron)}}
+.htitle{font-family:"Cinzel Decorative",serif;font-size:1.4rem;color:var(--gold);letter-spacing:4px}
+.hsub{font-size:0.7rem;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:4px}
+
+/* Server status bar */
+.srv-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-size:0.75rem}
+.srv-dot{width:10px;height:10px;border-radius:50%;background:#666;flex-shrink:0;transition:all 0.3s}
+.srv-dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.srv-dot.off{background:#FF4444;box-shadow:0 0 8px #FF4444}
+.srv-dot.checking{background:var(--gold);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.srv-txt{flex:1;color:rgba(255,255,255,0.5)}
+.srv-txt b{color:#fff}
+
+/* Steps */
+.steps{display:flex;background:rgba(255,255,255,0.03);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.08)}
+.si{flex:1;padding:9px 4px;text-align:center;font-size:0.58rem;letter-spacing:1px;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.06);transition:all 0.3s}
+.si:last-child{border-right:none}
+.si.active{background:rgba(255,215,0,0.08);color:var(--gold)}
+.si.done{background:rgba(0,204,100,0.07);color:var(--green)}
+.si .sn{display:block;font-size:0.9rem;margin-bottom:2px}
+
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:18px}
+.ctitle{font-size:0.65rem;letter-spacing:3px;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.ctitle::before,.ctitle::after{content:"";flex:1;height:1px;background:rgba(255,215,0,0.2)}
+
+/* Days */
+.days{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.dp{padding:8px 12px;border-radius:18px;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);font-size:0.7rem;letter-spacing:1px;color:rgba(255,255,255,0.4);transition:all 0.3s;text-align:center;min-width:78px}
+.dp:hover{background:rgba(255,255,255,0.08);color:#fff}
+.dp.active{background:rgba(255,255,255,0.1);color:#fff;border-color:var(--gold);box-shadow:0 0 12px rgba(255,215,0,0.18)}
+.dp .di{font-size:1.3rem;display:block;margin-bottom:2px}
+.dp .dn{font-size:0.58rem;font-weight:bold}
+.dp .dg{font-size:0.48rem;opacity:0.5}
+
+/* Gods */
+.gods{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.gp{padding:14px 18px;border-radius:14px;cursor:pointer;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);transition:all 0.3s;text-align:center;min-width:130px}
+.gp:hover{transform:translateY(-2px)}
+.gp.active{border-color:var(--gold);background:rgba(255,255,255,0.08)}
+.gp .gs{font-size:1.8rem;display:block;margin-bottom:5px}
+.gp .gn{font-size:0.78rem;color:#fff;letter-spacing:1px}
+.gp .gm{font-size:0.62rem;color:rgba(255,255,255,0.35);margin-top:3px}
+
+/* Audio upload */
+.ubox{border:2px dashed rgba(255,255,255,0.15);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:all 0.3s}
+.ubox:hover,.ubox.has{border-color:var(--gold);background:rgba(255,215,0,0.04)}
+.ubox .ui{font-size:1.8rem;margin-bottom:6px}
+.ubox .ut{font-size:0.78rem;color:rgba(255,255,255,0.4)}
+.ubox .ut b{color:var(--gold)}
+
+/* Lyrics */
+textarea{width:100%;height:190px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;padding:14px;font-size:0.95rem;resize:none;line-height:2}
+textarea:focus{outline:none;border-color:rgba(255,215,0,0.4)}
+textarea::placeholder{color:rgba(255,255,255,0.18)}
+.hint{font-size:0.66rem;color:rgba(255,255,255,0.28);margin-top:7px;line-height:1.6}
+
+/* Tap sync */
+.tpanel{background:rgba(0,0,0,0.3);border-radius:12px;padding:14px;margin-top:12px}
+.tptitle{font-size:0.63rem;letter-spacing:2px;color:var(--saffron);margin-bottom:9px}
+.mprog{height:3px;background:rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;margin:7px 0}
+.mfill{height:100%;width:0%;background:linear-gradient(90deg,var(--red),var(--saffron),var(--gold));border-radius:10px;transition:width 0.3s}
+.mtime{display:flex;justify-content:space-between;font-size:0.6rem;color:rgba(255,255,255,0.3);font-family:monospace}
+.tctrl{display:flex;gap:6px;margin:9px 0;flex-wrap:wrap;align-items:center}
+.tc{background:none;border:1px solid rgba(255,215,0,0.25);color:var(--gold);padding:5px 10px;border-radius:7px;cursor:pointer;font-size:0.76rem;transition:all 0.2s}
+.tc.play{font-size:1rem;padding:5px 16px;border-color:var(--gold)}
+.tc.undo{border-color:rgba(255,80,80,0.3);color:#ff9999}
+.cbox{background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.12);border-radius:10px;padding:11px;text-align:center;margin:7px 0}
+.cbl{font-size:0.56rem;letter-spacing:3px;color:var(--saffron);margin-bottom:5px}
+.cbt{font-size:1.05rem;color:var(--gold);min-height:1.3rem}
+.cbn{font-size:0.7rem;color:rgba(255,255,255,0.28);margin-top:3px}
+.cbc{font-size:0.58rem;color:rgba(255,255,255,0.2);margin-top:3px;font-family:monospace}
+.tapbig{width:100%;padding:13px;border-radius:12px;background:radial-gradient(ellipse,rgba(255,107,0,0.2),rgba(139,0,0,0.5));border:2px solid var(--saffron);color:#fff;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all 0.15s;letter-spacing:1px;user-select:none}
+.tapbig:active,.tapbig.tapped{transform:scale(0.97);background:radial-gradient(ellipse,rgba(255,215,0,0.35),rgba(255,107,0,0.65))}
+.taph{font-size:0.62rem;color:rgba(255,255,255,0.2);text-align:center;margin-top:5px;letter-spacing:1px}
+.slist{max-height:120px;overflow-y:auto;border-radius:8px;background:rgba(0,0,0,0.2);margin-top:7px}
+.sr{display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.74rem;gap:7px}
+.sr.lat{background:rgba(255,215,0,0.07)}
+.srt{color:var(--saffron);font-family:monospace;font-size:0.66rem;min-width:38px}
+.srl{flex:1;color:#fff}
+.srd{color:rgba(255,80,80,0.4);cursor:pointer;font-size:0.68rem;padding:1px 4px}
+
+/* Generate section */
+.gsec{background:rgba(255,255,255,0.03);border:1px solid rgba(255,215,0,0.15);border-radius:14px;padding:18px;text-align:center}
+.gtitle{font-family:"Cinzel Decorative",serif;font-size:0.95rem;color:var(--gold);letter-spacing:2px;margin-bottom:5px}
+.gdesc{font-size:0.72rem;color:rgba(255,255,255,0.35);margin-bottom:16px;line-height:1.6}
+
+/* Progress */
+.gpwrap{display:none;margin:12px 0;text-align:left}
+.gpbar{height:8px;background:rgba(255,255,255,0.08);border-radius:10px;overflow:hidden}
+.gpfill{height:100%;width:0%;background:linear-gradient(90deg,var(--red),var(--saffron),var(--gold));border-radius:10px;transition:width 0.5s}
+.gpst{font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:6px;font-family:monospace}
+.gpmsg{font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:4px}
+
+/* Buttons */
+.btn{padding:11px 24px;border-radius:24px;border:none;cursor:pointer;font-size:0.85rem;letter-spacing:2px;transition:all 0.3s;color:#fff;display:inline-flex;align-items:center;gap:7px}
+.btn:disabled{opacity:0.35;cursor:not-allowed}
+.btn:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.1)}
+.btnp{background:linear-gradient(135deg,var(--red),var(--saffron));box-shadow:0 5px 18px rgba(255,107,0,0.3)}
+.btns{background:linear-gradient(135deg,#1a4a1a,#00aa44)}
+.btnx{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.12)}
+.btnmp4{background:linear-gradient(135deg,#0d0050,#4400aa,#5500dd);box-shadow:0 6px 20px rgba(80,0,200,0.4);font-size:0.95rem;padding:13px 28px}
+.brow{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+
+.fdiv{display:flex;align-items:center;gap:7px;justify-content:center;margin:8px 0}
+.fl{height:1px;flex:1;max-width:70px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.fi{font-size:0.85rem;animation:flk .5s ease-in-out infinite alternate}
+@keyframes flk{from{transform:scale(1) rotate(-3deg)}to{transform:scale(1.2) rotate(3deg)}}
+
+#ainp{display:none}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:20px;font-size:0.78rem;z-index:9999;letter-spacing:1px;opacity:0;transition:opacity 0.4s;pointer-events:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<canvas id="bgc"></canvas>
+<div class="app">
+
+<!-- Header -->
+<div class="hdr">
+  <span class="hom">ॐ</span>
+  <div class="htitle">VM - VIDEO MAKER</div>
+  <div class="hsub">AUTOMATIC MP4 VIDEO — AUDIO + LYRICS → DOWNLOAD</div>
+</div>
+
+<!-- Server Status Bar -->
+<div class="srv-bar">
+  <div class="srv-dot checking" id="srv-dot"></div>
+  <div class="srv-txt" id="srv-txt"><b>Server check ho raha hai...</b></div>
+  <button class="btn btnx" style="padding:5px 12px;font-size:0.68rem" onclick="checkServer()">🔄 Retry</button>
+</div>
+
+<!-- Steps -->
+<div class="steps">
+  <div class="si active" id="si1"><span class="sn">📅</span>DIN</div>
+  <div class="si" id="si2"><span class="sn">🙏</span>DEVTA</div>
+  <div class="si" id="si3"><span class="sn">🎵</span>AUDIO</div>
+  <div class="si" id="si4"><span class="sn">📝</span>LYRICS</div>
+  <div class="si" id="si5"><span class="sn">🎬</span>MP4</div>
+</div>
+
+<!-- S1: Day -->
+<div class="card" id="s1">
+  <div class="ctitle">📅 DIN CHUNO</div>
+  <div class="days">
+    <div class="dp active" data-day="monday" onclick="pickDay('monday')"><span class="di">🔱</span><span class="dn">MONDAY</span><span class="dg">Shiva•Parvati</span></div>
+    <div class="dp" data-day="tuesday" onclick="pickDay('tuesday')"><span class="di">🚩</span><span class="dn">TUESDAY</span><span class="dg">Hanuman•Durga</span></div>
+    <div class="dp" data-day="wednesday" onclick="pickDay('wednesday')"><span class="di">🌿</span><span class="dn">WEDNESDAY</span><span class="dg">Ganesh•Saraswati</span></div>
+    <div class="dp" data-day="thursday" onclick="pickDay('thursday')"><span class="di">💛</span><span class="dn">THURSDAY</span><span class="dg">Vishnu•Brihaspati</span></div>
+    <div class="dp" data-day="friday" onclick="pickDay('friday')"><span class="di">🌸</span><span class="dn">FRIDAY</span><span class="dg">Lakshmi</span></div>
+    <div class="dp" data-day="saturday" onclick="pickDay('saturday')"><span class="di">⚫</span><span class="dn">SATURDAY</span><span class="dg">Shani Dev</span></div>
+    <div class="dp" data-day="sunday" onclick="pickDay('sunday')"><span class="di">🌞</span><span class="dn">SUNDAY</span><span class="dg">Surya Dev</span></div>
+  </div>
+  <div class="brow"><button class="btn btnp" onclick="goS(2)">Devta Chuno →</button></div>
+</div>
+
+<!-- S2: God -->
+<div class="card" id="s2" style="display:none">
+  <div class="ctitle">🙏 DEVTA CHUNO</div>
+  <div class="gods" id="godsrow"></div>
+  <div class="brow">
+    <button class="btn btnx" onclick="goS(1)">← Wapas</button>
+    <button class="btn btnp" onclick="goS(3)">Audio Upload →</button>
+  </div>
+</div>
+
+<!-- S3: Audio -->
+<div class="card" id="s3" style="display:none">
+  <div class="ctitle">🎵 AUDIO UPLOAD</div>
+  <!-- God tabs for multi-god days -->
+  <div id="god-tabs-s3" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"></div>
+  <div id="cur-god-label" style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:10px;text-align:center"></div>
+  <div class="ubox" id="ubox" onclick="document.getElementById('ainp').click()" ondragover="dg(event,1)" ondragleave="dg(event,0)" ondrop="dp(event)">
+    <div class="ui">🎵</div>
+    <div class="ut"><b>Click karo</b> ya drag & drop<br><small style="opacity:0.5">MP3, WAV, M4A</small></div>
+  </div>
+  <input type="file" id="ainp" accept="audio/*" onchange="loadAudio(event)">
+  <!-- Per-god status -->
+  <div id="god-audio-status" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div>
+  <div class="brow">
+    <button class="btn btnx" onclick="goS(2)">← Wapas</button>
+    <button class="btn btnp" id="s3n" onclick="goS(4)" disabled>Lyrics →</button>
+  </div>
+</div>
+
+<!-- S4: Lyrics + Sync -->
+<div class="card" id="s4" style="display:none">
+  <div class="ctitle">📝 LYRICS + TAP SYNC</div>
+  <textarea id="lyrta" placeholder="Ek line ek row mein:&#10;&#10;OM Namah Shivaya&#10;Jay Mahakal Jay Mahakal&#10;Bholenath teri jay jay ho&#10;Har Har Mahadev..." oninput="chkS4()"></textarea>
+  <div class="hint">💡 Ek line = Ek row • Play karke TAP karo timing ke liye • Hindi/English OK</div>
+  <div class="tpanel">
+    <div class="tptitle">👆 TAP TO SYNC — Audio play karo, jab line aaye SPACE ya TAP karo!</div>
+    <div class="mprog" id="mprog"><div class="mfill" id="mfill"></div></div>
+    <div class="mtime"><span id="mtc">0:00</span><span id="mtt">0:00</span></div>
+    <div class="tctrl">
+      <button class="tc" onclick="tapA.currentTime=Math.max(0,tapA.currentTime-5)">⏪5s</button>
+      <button class="tc play" id="tpb" onclick="togTP()">▶</button>
+      <button class="tc" onclick="tapA.currentTime=Math.min(tapA.duration||999,tapA.currentTime+5)">5s⏩</button>
+      <button class="tc undo" onclick="undoTap()">↩ Undo</button>
+      <button class="tc" onclick="clrSync()" style="border-color:rgba(255,50,50,0.3);color:#ff7777">🗑 Clear</button>
+    </div>
+    <div class="cbox">
+      <div class="cbl">YEH LINE AANE WALI HAI — TAP KARO!</div>
+      <div class="cbt" id="cbt">▶ Play karo pehle</div>
+      <div class="cbn" id="cbn"></div>
+      <div class="cbc" id="cbc">0 / 0 synced</div>
+    </div>
+    <button class="tapbig" id="tbig" onclick="doTap()"><span style="font-size:1.3rem">👆</span> TAP KARO</button>
+    <div class="taph">Ya keyboard SPACE dabao</div>
+    <div class="tptitle" style="margin-top:9px">📋 SYNCED LINES</div>
+    <div class="slist" id="slist"><div style="text-align:center;color:rgba(255,255,255,0.18);padding:10px;font-size:0.74rem">Tap karo — yahan dikhega!</div></div>
+  </div>
+  <div class="brow">
+    <button class="btn btnx" onclick="goS(3)">← Wapas</button>
+    <button class="btn btns" id="s4n" onclick="goS(5)" disabled>🎬 Video Banao →</button>
+  </div>
+</div>
+
+<!-- S5: Generate -->
+<div class="card" id="s5" style="display:none">
+  <div class="gsec">
+    <div class="gtitle" id="gtitle">🎬 MP4 VIDEO BANAO</div>
+    <!-- God selector for multi-god days -->
+    <div id="s5-god-sel" style="display:none;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px"></div>
+    <div class="gdesc" id="gdesc">Sab ready! Button dabao — automatic MP4 banega!</div>
+    <div class="gpwrap" id="gpw">
+      <div class="gpbar"><div class="gpfill" id="gpf"></div></div>
+      <div class="gpst" id="gps">0%</div>
+      <div class="gpmsg" id="gpm">Starting...</div>
+    </div>
+    <div class="fdiv"><div class="fl"></div><span class="fi">🔥</span><span class="fi">🪔</span><span class="fi">🔥</span><div class="fl"></div></div>
+    <button class="btn btnmp4" id="genbtn" onclick="genMP4()">🎬 MP4 VIDEO DOWNLOAD KARO</button>
+    <div style="margin-top:12px;font-size:0.65rem;color:rgba(255,255,255,0.2);line-height:1.8">
+      ✅ Real MP4 file — phone / YouTube / TV sab pe chalegi<br>
+      ✅ 1280×720 HD quality<br>
+      ✅ Audio + Lyrics perfectly synced<br>
+      ✅ Automatic — koi manual kaam nahi!
+    </div>
+  </div>
+  <div class="brow"><button class="btn btnx" onclick="goS(4)">← Edit Karo</button></div>
+</div>
+
+<!-- Setup Instructions (shown when server offline) -->
+<div class="card" id="setup-guide" style="display:none;border-color:rgba(255,215,0,0.3)">
+  <div class="ctitle">⚙️ SERVER SETUP KARO</div>
+  <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);line-height:2">
+    <b style="color:var(--gold)">Ek baar setup karo — phir hamesha automatic MP4!</b><br><br>
+    <b style="color:#fff">Step 1</b> — Python install karo: <span style="color:var(--saffron)">python.org</span><br>
+    <b style="color:#fff">Step 2</b> — FFmpeg install karo: <span style="color:var(--saffron)">ffmpeg.org</span><br>
+    <b style="color:#fff">Step 3</b> — Terminal mein run karo:<br>
+    <div style="background:rgba(0,0,0,0.4);padding:10px;border-radius:8px;margin:8px 0;font-family:monospace;font-size:0.75rem;color:var(--green)">
+      pip install flask flask-cors Pillow<br>
+      python vm_server.py
+    </div>
+    <b style="color:#fff">Step 4</b> — Yeh HTML file browser mein open karo ✅
+  </div>
+</div>
+
+</div><!-- /app -->
+<div id="toast"></div>
+<audio id="tap-audio"></audio>
+
+<script>
+// Auto-detect: local ya online dono pe kaam karega
+const SERVER = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:8765'
+  : window.location.origin;  // Render pe same domain
+let srvOnline = false;
+
+const GODS = {
+  monday:[
+    {name:"Shiv Ji",sym:"🔱",mantra:"OM Namah Shivaya",th:{c1:"#0d0d1a",c2:"#1a1a2e",fire:"#7EB8E8",gold:"#C0C0FF",acc:"#A8D8EA"}},
+    {name:"Parvati Mata",sym:"🌙",mantra:"OM Umayai Namah",th:{c1:"#1a0a1a",c2:"#2d0a2d",fire:"#FF69B4",gold:"#FFB6C1",acc:"#DDA0DD"}}
+  ],
+  tuesday:[
+    {name:"Hanuman Ji",sym:"🚩",mantra:"Jai Bajrang Bali",th:{c1:"#1a0500",c2:"#2d0800",fire:"#FF6B00",gold:"#FFD700",acc:"#FF4500"}},
+    {name:"Durga Mata",sym:"⚔️",mantra:"Jai Maa Durge",th:{c1:"#1a0008",c2:"#2d0010",fire:"#FF4500",gold:"#FFD700",acc:"#FF1493"}}
+  ],
+  wednesday:[
+    {name:"Ganesh Ji",sym:"🐘",mantra:"Ganpati Bappa Morya",th:{c1:"#001a00",c2:"#002200",fire:"#FFAA00",gold:"#FFD700",acc:"#00CC44"}},
+    {name:"Saraswati Mata",sym:"🎵",mantra:"OM Aim Saraswatyai",th:{c1:"#000d1a",c2:"#001433",fire:"#FFD700",gold:"#FFFACD",acc:"#87CEEB"}}
+  ],
+  thursday:[
+    {name:"Vishnu Ji",sym:"🪷",mantra:"OM Namo Narayanaya",th:{c1:"#1a1400",c2:"#2d2200",fire:"#FF8C00",gold:"#FFD700",acc:"#FFA500"}},
+    {name:"Brihaspati Ji",sym:"📿",mantra:"OM Brihaspataye Namah",th:{c1:"#0d0020",c2:"#150028",fire:"#7B68EE",gold:"#FFD700",acc:"#9370DB"}}
+  ],
+  friday:[{name:"Lakshmi Mata",sym:"🌺",mantra:"OM Shri Mahalakshmyai",th:{c1:"#1a000d",c2:"#2d0015",fire:"#FF1493",gold:"#FFD700",acc:"#FF69B4"}}],
+  saturday:[{name:"Shani Dev",sym:"🪐",mantra:"OM Shan Shanaischaraya",th:{c1:"#050510",c2:"#0a0a1a",fire:"#6A5ACD",gold:"#C0C0C0",acc:"#4169E1"}}],
+  sunday:[{name:"Surya Dev",sym:"☀️",mantra:"OM Suryaya Namah",th:{c1:"#1a0800",c2:"#2d1200",fire:"#FF4500",gold:"#FFD700",acc:"#FF8C00"}}]
+};
+
+// Per-god state: each god has its own audio + lyrics + sync
+// godData[day][godIdx] = {asrc, aname, ablob, synced, si2, lines}
+const godData = {};
+const ST = {day:"monday", gi:0};
+const tapA = document.getElementById("tap-audio");
+
+function initDay(day) {
+  const gods = GODS[day] || [];
+  if (!godData[day]) {
+    godData[day] = gods.map(() => ({
+      asrc:null, aname:"", ablob:null,
+      synced:[], si2:0, lines:[], tp:false
+    }));
+  }
+}
+
+function curGod() {
+  initDay(ST.day);
+  return godData[ST.day][ST.gi];
+}
+
+function saveGodState() {
+  const gd = curGod();
+  gd.lines = document.getElementById("lyrta").value
+    .split("\n").map(l=>l.trim()).filter(l=>l);
+  gd.synced = [...(window._syncedCache||[])];
+  gd.si2    = window._syncIdxCache || 0;
+}
+
+function loadGodState() {
+  const gd  = curGod();
+  const god = GODS[ST.day][ST.gi];
+  // Audio
+  if (gd.asrc) {
+    tapA.src = gd.asrc;
+    document.getElementById("ubox").classList.add("has");
+    document.getElementById("ubox").innerHTML =
+      `<div class="ui">✅</div><div class="ut"><b>${gd.aname}</b><br><small>Click to change</small></div>`;
+    document.getElementById("s3n").disabled = false;
+  } else {
+    tapA.src = "";
+    document.getElementById("ubox").classList.remove("has");
+    document.getElementById("ubox").innerHTML =
+      `<div class="ui">${god.sym}</div><div class="ut"><b>${god.name} ka Audio</b><br><small>Click karo ya drag & drop</small></div>`;
+    document.getElementById("s3n").disabled = true;
+  }
+  // Lyrics + sync
+  document.getElementById("lyrta").value = gd.lines.join("\n");
+  window._syncedCache = [...gd.synced];
+  window._syncIdxCache = gd.si2;
+  // Cur label
+  document.getElementById("cur-god-label").textContent =
+    `Current: ${god.sym} ${god.name}`;
+  chkS4(); updTUI();
+}
+
+// ── SERVER CHECK ─────────────────────────────────────────────
+async function checkServer(){
+  const dot=document.getElementById("srv-dot");
+  const txt=document.getElementById("srv-txt");
+  dot.className="srv-dot checking";
+  txt.innerHTML="<b>Server check ho raha hai...</b>";
+  try{
+    const r=await fetch(SERVER+"/ping",{signal:AbortSignal.timeout(3000)});
+    const d=await r.json();
+    dot.className="srv-dot on";
+    txt.innerHTML="<b style='color:var(--green)'>✅ Server Online!</b> — "+d.message;
+    srvOnline=true;
+    document.getElementById("setup-guide").style.display="none";
+  }catch(e){
+    dot.className="srv-dot off";
+    txt.innerHTML="<b style='color:#FF6666'>❌ Server Offline</b> — vm_server.py chalao pehle!";
+    srvOnline=false;
+    document.getElementById("setup-guide").style.display="block";
+  }
+}
+
+// Check every 5 seconds
+checkServer();
+setInterval(checkServer,5000);
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function goS(n){
+  if(ST._curStep===4) saveGodState();
+  ST._curStep=n;
+  [1,2,3,4,5].forEach(i=>{
+    document.getElementById("s"+i).style.display=i===n?"block":"none";
+    const el=document.getElementById("si"+i);
+    el.classList.remove("active","done");
+    if(i===n)el.classList.add("active"); else if(i<n)el.classList.add("done");
+  });
+  if(n===2){bldGods();}
+  if(n===3){initDay(ST.day);buildGodTabs();loadGodState();updateGodAudioStatus();}
+  if(n===4){initDay(ST.day);loadGodState();document.addEventListener("keydown",spH);}
+  else document.removeEventListener("keydown",spH);
+  if(n===5)setupGen();
+}
+function spH(e){if(e.code==="Space"){e.preventDefault();doTap();}}
+
+// ── STEP 1 ────────────────────────────────────────────────────
+function pickDay(d){
+  ST.day=d; ST.gi=0;
+  document.querySelectorAll(".dp").forEach(p=>p.classList.toggle("active",p.dataset.day===d));
+  initDay(d);
+}
+
+// ── STEP 2 ────────────────────────────────────────────────────
+function bldGods(){
+  const gs=GODS[ST.day]||[];
+  document.getElementById("godsrow").innerHTML=gs.map((g,i)=>`
+    <div class="gp ${i===ST.gi?"active":""}" onclick="pickGod(${i})">
+      <span class="gs">${g.sym}</span><div class="gn">${g.name}</div><div class="gm">${g.mantra}</div>
+    </div>`).join("");
+}
+function pickGod(i){
+  saveGodState();
+  ST.gi=i;
+  document.querySelectorAll(".gp").forEach((p,j)=>p.classList.toggle("active",j===i));
+  buildGodTabs();
+  loadGodState();
+  updateGodAudioStatus();
+}
+
+// ── STEP 3 ────────────────────────────────────────────────────
+function loadAudio(e){
+  const f=e.target.files[0]; if(!f) return;
+  const url = URL.createObjectURL(f);
+  const gd  = curGod();
+  gd.asrc = url; gd.aname = f.name; gd.ablob = f;
+  tapA.src = url;
+  document.getElementById("ubox").classList.add("has");
+  document.getElementById("ubox").innerHTML=
+    `<div class="ui">✅</div><div class="ut"><b>${f.name}</b><br><small>Click to change</small></div>`;
+  document.getElementById("s3n").disabled = false;
+  document.getElementById("cur-god-label").textContent =
+    `✅ ${GODS[ST.day][ST.gi].name}: ${f.name}`;
+  updateGodAudioStatus();
+  e.target.value="";
+}
+
+function buildGodTabs() {
+  const gods = GODS[ST.day]||[];
+  initDay(ST.day);
+  const tabs = document.getElementById("god-tabs-s3");
+  if (!tabs) return;
+  if (gods.length <= 1) { tabs.style.display="none"; return; }
+  tabs.style.display = "flex";
+  tabs.innerHTML = gods.map((g,i) => {
+    const gd = godData[ST.day][i];
+    const badge = gd&&gd.asrc ? "✅" : "⚪";
+    return `<button onclick="pickGod(${i})"
+      style="padding:6px 16px;border-radius:18px;border:1px solid ${i===ST.gi?"var(--gold)":"rgba(255,255,255,0.15)"};
+      background:${i===ST.gi?"rgba(255,215,0,0.1)":"rgba(255,255,255,0.04)"};
+      color:${i===ST.gi?"var(--gold)":"rgba(255,255,255,0.45)"};
+      cursor:pointer;font-size:0.75rem;transition:all 0.3s">
+      ${g.sym} ${g.name} ${badge}
+    </button>`;
+  }).join("");
+}
+
+function updateGodAudioStatus() {
+  const gods = GODS[ST.day]||[];
+  initDay(ST.day);
+  const el = document.getElementById("god-audio-status");
+  if (!el) return;
+  if (gods.length <= 1) { el.innerHTML=""; return; }
+  el.innerHTML = gods.map((g,i) => {
+    const gd = godData[ST.day][i];
+    const ok = gd && gd.asrc;
+    return `<div style="font-size:0.68rem;padding:4px 12px;border-radius:10px;
+      background:${ok?"rgba(0,204,100,0.1)":"rgba(255,255,255,0.04)"};
+      border:1px solid ${ok?"rgba(0,204,100,0.3)":"rgba(255,255,255,0.1)"};
+      color:${ok?"#00CC66":"rgba(255,255,255,0.35)"}">
+      ${g.sym} ${g.name}: ${ok?gd.aname:"No audio"}
+    </div>`;
+  }).join("");
+}
+function dg(e,on){e.preventDefault();document.getElementById("ubox").style.borderColor=on?"var(--gold)":"";}
+function dp(e){e.preventDefault();document.getElementById("ubox").style.borderColor="";const f=e.dataTransfer.files[0];if(f&&f.type.startsWith("audio/"))loadAudio({target:{files:[f]}});}
+
+// ── STEP 4 ────────────────────────────────────────────────────
+function chkS4(){const l=document.getElementById("lyrta").value.split("\n").filter(l=>l.trim());document.getElementById("s4n").disabled=l.length===0;}
+
+tapA.addEventListener("timeupdate",()=>{
+  const p=tapA.duration?(tapA.currentTime/tapA.duration*100):0;
+  document.getElementById("mfill").style.width=p+"%";
+  document.getElementById("mtc").textContent=fmt(tapA.currentTime);
+  document.getElementById("mtt").textContent=fmt(tapA.duration||0);
+});
+document.getElementById("mprog").addEventListener("click",e=>{
+  const r=e.currentTarget.getBoundingClientRect();
+  if(tapA.duration)tapA.currentTime=(e.clientX-r.left)/r.width*tapA.duration;
+});
+tapA.addEventListener("ended",()=>{ST.tp=false;document.getElementById("tpb").textContent="▶";});
+
+function togTP(){
+  ST.lines=document.getElementById("lyrta").value.split("\n").map(l=>l.trim()).filter(l=>l);
+  if(ST.tp){tapA.pause();document.getElementById("tpb").textContent="▶";}
+  else{tapA.play();document.getElementById("tpb").textContent="⏸";}
+  ST.tp=!ST.tp; updTUI();
+}
+function getSynced(){return window._syncedCache||(window._syncedCache=[]);}
+function getSyncIdx(){return window._syncIdxCache||0;}
+function setSyncIdx(v){window._syncIdxCache=v;}
+
+function doTap(){
+  const lines=document.getElementById("lyrta").value.split("\n").map(l=>l.trim()).filter(l=>l);
+  const idx=getSyncIdx();
+  if(idx>=lines.length)return;
+  getSynced().push({t:tapA.currentTime,l:lines[idx]});
+  setSyncIdx(idx+1);
+  const b=document.getElementById("tbig");b.classList.add("tapped");setTimeout(()=>b.classList.remove("tapped"),150);
+  updTUI();
+}
+function undoTap(){const s=getSynced();if(!s.length)return;s.pop();setSyncIdx(Math.max(0,getSyncIdx()-1));updTUI();}
+function clrSync(){window._syncedCache=[];window._syncIdxCache=0;updTUI();}
+function delS(i){const s=getSynced();s.splice(i,1);setSyncIdx(s.length);updTUI();}
+function updTUI(){
+  const lines=document.getElementById("lyrta").value.split("\n").map(l=>l.trim()).filter(l=>l);
+  const idx=getSyncIdx(); const s=getSynced();
+  const cur=lines[idx]||(idx>=lines.length?"✅ Done!":"▶ Play karo");
+  const nxt=lines[idx+1]||"";
+  document.getElementById("cbt").textContent=cur;
+  document.getElementById("cbn").textContent=nxt?"⏭ "+nxt:"";
+  document.getElementById("cbc").textContent=idx+" / "+lines.length+" synced";
+  const sl=document.getElementById("slist");
+  if(!s.length){sl.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.18);padding:10px;font-size:0.74rem">Tap karo!</div>';return;}
+  sl.innerHTML=s.map((d,i)=>`<div class="sr${i===s.length-1?" lat":""}"><span class="srt">${fmt(d.t)}</span><span class="srl">${d.l}</span><span class="srd" onclick="delS(${i})">✕</span></div>`).join("");
+  sl.scrollTop=sl.scrollHeight;
+}
+
+// ── STEP 5 ────────────────────────────────────────────────────
+function setupGen(){
+  saveGodState();
+  const gods = GODS[ST.day]||[];
+  initDay(ST.day);
+  const g  = gods[ST.gi];
+  const gd = curGod();
+  const lines = gd.lines.length ? gd.lines :
+    document.getElementById("lyrta").value.split("\n").filter(l=>l.trim());
+
+  // Build status for all gods
+  const godStatus = gods.map((gx,i)=>{
+    const gdx = godData[ST.day][i];
+    const hasA = gdx&&gdx.asrc;
+    const hasL = gdx&&gdx.lines.length>0;
+    return `<div style="font-size:0.7rem;padding:5px 12px;border-radius:8px;margin:3px 0;
+      background:${hasA&&hasL?"rgba(0,204,100,0.1)":"rgba(255,100,0,0.08)"};
+      border:1px solid ${hasA&&hasL?"rgba(0,204,100,0.3)":"rgba(255,100,0,0.2)"};
+      color:${hasA&&hasL?"#00CC66":"rgba(255,180,80,0.8)"}">
+      ${gx.sym} ${gx.name}: ${hasA?"✅ Audio":"❌ No Audio"} • ${hasL?"✅ "+gdx.lines.length+" lines":"❌ No Lyrics"}
+    </div>`;
+  }).join("");
+
+  document.getElementById("gtitle").textContent = "🎬 "+g.name+" — MP4 Video";
+  document.getElementById("gdesc").innerHTML =
+    `${godStatus}<br>
+     <b style="color:var(--gold)">${g.name}</b> ka video banega!<br>
+     <span style="color:rgba(255,215,0,0.45);font-size:0.68rem">⏱ 3-5 min lagenge — page band mat karna!</span>`;
+
+  // God selector for step 5 if multi-god
+  const gsel = document.getElementById("s5-god-sel");
+  if(gsel){
+    if(gods.length>1){
+      gsel.style.display="flex";
+      gsel.innerHTML = gods.map((gx,i)=>`
+        <button onclick="ST.gi=${i};setupGen()"
+          style="padding:7px 16px;border-radius:18px;cursor:pointer;font-size:0.78rem;
+          border:1px solid ${i===ST.gi?"var(--gold)":"rgba(255,255,255,0.15)"};
+          background:${i===ST.gi?"rgba(255,215,0,0.12)":"rgba(255,255,255,0.04)"};
+          color:${i===ST.gi?"var(--gold)":"rgba(255,255,255,0.45)"}">
+          ${gx.sym} ${gx.name}
+        </button>`).join("");
+    } else gsel.style.display="none";
+  }
+}
+
+async function genMP4(){
+  if(!srvOnline){
+    toast("❌ Server offline hai! vm_server.py chalao pehle","#FF4444");
+    return;
+  }
+  saveGodState();
+  const g   = GODS[ST.day][ST.gi];
+  const gd  = curGod();
+  const rawL = gd.lines.length ? gd.lines :
+    document.getElementById("lyrta").value.split("\n").map(l=>l.trim()).filter(l=>l);
+
+  if(!gd.asrc){toast("⚠️ "+g.name+" ka audio upload karo!","#FF4500");return;}
+  if(!rawL.length){toast("⚠️ Lyrics likho!","#FF4500");return;}
+
+  // Build lyrics data
+  let ld;
+  if(gd.synced.length>=rawL.length*0.5){
+    ld=gd.synced.map(d=>({t:d.t,l:d.l}));
+  }else{
+    const dur=tapA.duration||180;
+    ld=rawL.map((l,i)=>({t:Math.round(i/rawL.length*dur),l}));
+    toast("Auto timestamps use ho rahe hain","#FF8C00");
+  }
+
+  document.getElementById("genbtn").disabled=true;
+  document.getElementById("genbtn").textContent="⏳ Generating...";
+  document.getElementById("gpw").style.display="block";
+  setProg(2,"Audio server pe bhej rahe hain...");
+
+  // Convert audio blob to base64
+  const b64=await new Promise(res=>{
+    const fr=new FileReader();
+    fr.onload=()=>res(fr.result.split(",")[1]);
+    fr.readAsDataURL(gd.ablob);
+  });
+
+  // Send to server
+  try{
+    const resp=await fetch(SERVER+"/generate",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        audio_b64:b64,
+        lyrics:ld,
+        god_name:g.name,
+        god_symbol:g.sym,
+        mantra:g.mantra,
+        theme:g.th
+      })
+    });
+    const {job_id}=await resp.json();
+    toast("🔱 Video generate ho rahi hai!","#FF8C00");
+    pollJob(job_id,g.name);
+  }catch(err){
+    toast("❌ Server error: "+err.message,"#FF4444");
+    document.getElementById("genbtn").disabled=false;
+    document.getElementById("genbtn").textContent="🎬 MP4 VIDEO DOWNLOAD KARO";
+  }
+}
+
+function pollJob(jid,gname){
+  const iv=setInterval(async()=>{
+    try{
+      const r=await fetch(SERVER+"/status/"+jid);
+      const d=await r.json();
+      setProg(d.progress||0, d.message||"Processing...");
+      if(d.status==="done"){
+        clearInterval(iv);
+        setProg(100,"✅ Video ready! Download ho rahi hai...");
+        // Trigger download
+        const a=document.createElement("a");
+        a.href=SERVER+"/download/"+jid;
+        a.download=gname.replace(/ /g,"_")+"_VM.mp4";
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        setTimeout(()=>{
+          document.getElementById("genbtn").disabled=false;
+          document.getElementById("genbtn").textContent="🎬 DOBARA DOWNLOAD KARO";
+          toast("✅ "+gname+" MP4 download ho gayi!","#00CC66");
+        },2000);
+      }else if(d.status==="error"){
+        clearInterval(iv);
+        toast("❌ Error: "+d.message,"#FF4444");
+        document.getElementById("genbtn").disabled=false;
+        document.getElementById("genbtn").textContent="🎬 MP4 VIDEO DOWNLOAD KARO";
+      }
+    }catch(e){clearInterval(iv);toast("❌ Server disconnected","#FF4444");}
+  },2000);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────
+function setProg(p,msg){
+  document.getElementById("gpf").style.width=Math.min(p,100)+"%";
+  document.getElementById("gps").textContent=Math.floor(p)+"%";
+  document.getElementById("gpm").textContent=msg;
+}
+function fmt(s){if(!s||isNaN(s))return"0:00";return Math.floor(s/60)+":"+Math.floor(s%60).toString().padStart(2,"0");}
+function toast(msg,col){const t=document.getElementById("toast");t.textContent=msg;t.style.background=col||"#00CC66";t.style.color="#fff";t.style.opacity="1";setTimeout(()=>t.style.opacity="0",4000);}
+
+// ── BG CANVAS ─────────────────────────────────────────────────
+const bgc=document.getElementById("bgc");
+const bc=bgc.getContext("2d");
+let BW,BH,BT=0;
+function brs(){BW=bgc.width=window.innerWidth;BH=bgc.height=window.innerHeight;}
+brs();window.addEventListener("resize",brs);
+(function loop(){
+  BT+=0.004;bc.clearRect(0,0,BW,BH);
+  const g=bc.createRadialGradient(BW/2,BH/2,0,BW/2,BH/2,Math.max(BW,BH)*0.85);
+  g.addColorStop(0,"#0d0a1a");g.addColorStop(0.5,"#060410");g.addColorStop(1,"#000");
+  bc.fillStyle=g;bc.fillRect(0,0,BW,BH);
+  const g2=bc.createRadialGradient(BW/2,BH/2,0,BW/2,BH/2,BW*0.45);
+  g2.addColorStop(0,"rgba(180,80,0,"+(0.08+0.05*Math.sin(BT*1.5))+")");g2.addColorStop(1,"rgba(0,0,0,0)");
+  bc.fillStyle=g2;bc.fillRect(0,0,BW,BH);
+  requestAnimationFrame(loop);
+})();
+
+goS(1);
+</script>
+</body>
+</html>
