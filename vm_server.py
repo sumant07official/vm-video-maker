@@ -19,15 +19,25 @@ app = Flask(__name__)
 CORS(app)
 jobs = {}
 
-# ── FONTS ────────────────────────────────────────────────────
+# ── FONTS (Hindi/Devanagari support) ────────────────────────
 def get_fonts(sizes):
+    # Priority: fonts that support Devanagari (Hindi) script
+    # Script ke same folder mein bhi dhundho (for Render deployment)
+    base = os.path.dirname(os.path.abspath(__file__))
     bold_paths = [
+        os.path.join(base, "FreeSerifBold.ttf"),                   # Same folder (Render)
+        "/usr/share/fonts/truetype/freefont/FreeSerifBold.ttf",   # Linux system
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+        "/usr/share/fonts/opentype/unifont/unifont.otf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
         "C:/Windows/Fonts/arialbd.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
     ]
     reg_paths = [
+        os.path.join(base, "FreeSerif.ttf"),                       # Same folder (Render)
+        "/usr/share/fonts/truetype/freefont/FreeSerif.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/opentype/unifont/unifont.otf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/System/Library/Fonts/Supplemental/Arial.ttf",
         "C:/Windows/Fonts/arial.ttf",
@@ -63,14 +73,13 @@ def make_frame(t, dur, god_name, god_symbol, mantra, lyrics, theme, W=1280, H=72
     gold = hex2rgb(theme["gold"])
     acc  = hex2rgb(theme["acc"])
 
-    # ── Background gradient + glow ──
-    for y in range(0, H, 2):
+    # ── Background gradient + glow (optimized) ──
+    glow_a = 0.25 * (0.6 + 0.4*math.sin(t*2))
+    for y in range(0, H, 4):  # Step 4 rows at a time for speed
         ratio = y / H
         base = tuple(int(c1[i] + (c2[i]-c1[i])*ratio) for i in range(3))
-        cx, cy2 = W//2, H//2
-        # radial glow
-        glow_a = 0.25 * (0.6 + 0.4*math.sin(t*2))
-        draw.rectangle([(0,y),(W,y+1)], fill=blend(base, fire, glow_a * max(0, 1-(y/H))))
+        color = blend(base, fire, glow_a * max(0, 1-(y/H)))
+        draw.rectangle([(0,y),(W,min(y+4,H))], fill=color)
 
     # ── Animated particles ──
     for i in range(22):
@@ -163,7 +172,8 @@ def generate_video(job_id, audio_path, lyrics, god_name, god_symbol,
             capture_output=True, text=True)
         dur = float(r.stdout.strip() or "180")
 
-        FPS   = 12
+        FPS   = 8   # Lower FPS = faster generation, still smooth
+        W_OUT, H_OUT = 1280, 720
         total = int(dur * FPS)
         jobs[job_id]["message"] = f"Frames generate ho rahi hain (total {total})..."
 
@@ -175,8 +185,8 @@ def generate_video(job_id, audio_path, lyrics, god_name, god_symbol,
             t = fi / FPS
             frame = make_frame(t, dur, god_name, god_symbol,
                                mantra, lyrics, theme)
-            frame.save(os.path.join(frame_dir, f"f{fi:06d}.jpg"), quality=85)
-            if fi % 24 == 0:
+            frame.save(os.path.join(frame_dir, f"f{fi:06d}.jpg"), quality=80)
+            if fi % 16 == 0:
                 pct = int(fi / total * 80)
                 jobs[job_id].update(progress=pct,
                     message=f"Frame {fi}/{total} ({pct}%)")
@@ -226,6 +236,9 @@ def generate():
     if request.method == "OPTIONS":
         return jsonify({"ok": True})
     data    = request.json
+    # Auth check
+    if not require_auth():
+        return jsonify({"error":"Unauthorized — please login"}), 401
     job_id  = str(uuid.uuid4())[:8]
     jobs[job_id] = {"status": "queued", "progress": 0,
                     "message": "Queue mein hai...", "path": None}
