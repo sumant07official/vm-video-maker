@@ -124,10 +124,82 @@ textarea::placeholder{color:rgba(255,255,255,0.18)}
 
 #ainp{display:none}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:20px;font-size:0.78rem;z-index:9999;letter-spacing:1px;opacity:0;transition:opacity 0.4s;pointer-events:none;white-space:nowrap}
+
+/* LOGIN SCREEN */
+.login-screen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(5,2,8,0.97);backdrop-filter:blur(10px)}
+.login-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,215,0,0.25);border-radius:20px;padding:36px 32px;width:90%;max-width:400px;text-align:center}
+.login-om{font-size:3rem;color:var(--gold);text-shadow:0 0 25px var(--gold);animation:op 2s ease-in-out infinite;display:block;margin-bottom:8px}
+.login-title{font-family:"Cinzel Decorative",serif;font-size:1.2rem;color:var(--gold);letter-spacing:3px;margin-bottom:4px}
+.login-sub{font-size:0.68rem;color:rgba(255,255,255,0.3);letter-spacing:2px;margin-bottom:24px}
+.login-input{width:100%;padding:12px 16px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:0.9rem;margin-bottom:12px;letter-spacing:1px;transition:border-color 0.3s}
+.login-input:focus{outline:none;border-color:rgba(255,215,0,0.5)}
+.login-input::placeholder{color:rgba(255,255,255,0.2)}
+.login-btn{width:100%;padding:12px;border-radius:25px;border:none;background:linear-gradient(135deg,var(--red),var(--saffron));color:#fff;font-size:0.9rem;letter-spacing:2px;cursor:pointer;margin-top:4px;transition:all 0.3s}
+.login-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.login-err{font-size:0.72rem;color:#FF6666;margin-top:10px;min-height:1em}
+.login-divider{display:flex;align-items:center;gap:8px;margin:16px 0}
+.login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:rgba(255,255,255,0.1)}
+.login-divider span{font-size:0.65rem;color:rgba(255,255,255,0.25);letter-spacing:2px}
+.user-badge{display:none;position:fixed;top:12px;right:16px;z-index:200;display:none;align-items:center;gap:8px}
+.ub-name{background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.25);border-radius:20px;padding:6px 14px;font-size:0.7rem;color:var(--gold);letter-spacing:1px}
+.ub-chpass{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:6px 12px;font-size:0.7rem;color:rgba(255,255,255,0.5);letter-spacing:1px;cursor:pointer;transition:all 0.3s}
+.ub-chpass:hover{background:rgba(255,215,0,0.1);color:var(--gold);border-color:rgba(255,215,0,0.3)}
+.ub-logout{background:rgba(255,50,50,0.08);border:1px solid rgba(255,80,80,0.2);border-radius:20px;padding:6px 12px;font-size:0.7rem;color:#ff8888;letter-spacing:1px;cursor:pointer;transition:all 0.3s}
+.ub-logout:hover{background:rgba(255,50,50,0.2)}
+
+/* Change Password Modal */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.modal-overlay.open{display:flex}
+.modal-box{background:rgba(10,8,20,0.98);border:1px solid rgba(255,215,0,0.25);border-radius:18px;padding:28px;width:90%;max-width:380px;text-align:center}
+.modal-title{font-family:"Cinzel Decorative",serif;font-size:1rem;color:var(--gold);letter-spacing:2px;margin-bottom:18px}
+.modal-input{width:100%;padding:11px 15px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:0.88rem;margin-bottom:10px;transition:border-color 0.3s}
+.modal-input:focus{outline:none;border-color:rgba(255,215,0,0.45)}
+.modal-input::placeholder{color:rgba(255,255,255,0.2)}
+.modal-btns{display:flex;gap:8px;margin-top:6px}
+.modal-save{flex:1;padding:11px;border-radius:22px;border:none;background:linear-gradient(135deg,var(--red),var(--saffron));color:#fff;font-size:0.85rem;letter-spacing:1px;cursor:pointer;transition:all 0.3s}
+.modal-save:hover{filter:brightness(1.1)}
+.modal-cancel{padding:11px 18px;border-radius:22px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5);font-size:0.85rem;cursor:pointer}
+.modal-msg{font-size:0.72rem;margin-top:10px;min-height:1.2em}
 </style>
 </head>
 <body>
 <canvas id="bgc"></canvas>
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <span class="login-om">ॐ</span>
+    <div class="login-title">VM VIDEO MAKER</div>
+    <div class="login-sub">SIGN IN TO CONTINUE</div>
+    <div class="login-divider"><span>🔱 JAY MAHAKAL 🔱</span></div>
+    <input class="login-input" id="l-user" type="text" placeholder="Username" autocomplete="username">
+    <input class="login-input" id="l-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">🔱 LOGIN KARO</button>
+    <div class="login-err" id="l-err"></div>
+  </div>
+</div>
+
+<!-- User Badge (shown after login) -->
+<div class="user-badge" id="user-badge">
+  <div class="ub-name">👤 <span id="u-name"></span></div>
+  <button class="ub-chpass" onclick="openChPass()">🔑 Password</button>
+  <button class="ub-logout" onclick="doLogout()">⏏ Logout</button>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="chpass-modal">
+  <div class="modal-box">
+    <div class="modal-title">🔑 PASSWORD CHANGE KARO</div>
+    <input class="modal-input" id="cp-old" type="password" placeholder="Purana Password">
+    <input class="modal-input" id="cp-new" type="password" placeholder="Naya Password (min 6 chars)">
+    <input class="modal-input" id="cp-conf" type="password" placeholder="Naya Password Confirm karo" onkeydown="if(event.key==='Enter')doChangePass()">
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeChPass()">Cancel</button>
+      <button class="modal-save" onclick="doChangePass()">✅ Change Karo</button>
+    </div>
+    <div class="modal-msg" id="cp-msg"></div>
+  </div>
+</div>
+
 <div class="app">
 
 <!-- Header -->
@@ -627,9 +699,14 @@ async function genMP4(){
         god_name:g.name,
         god_symbol:g.sym,
         mantra:g.mantra,
-        theme:g.th
+        theme:g.th,
+        token: AUTH_TOKEN
       })
     });
+    if(resp.status===401){
+      toast("❌ Session expire ho gayi — dobara login karo","#FF4444");
+      showLogin(); return;
+    }
     const {job_id}=await resp.json();
     toast("🔱 Video generate ho rahi hai!","#FF8C00");
     pollJob(job_id,g.name);
@@ -696,6 +773,7 @@ brs();window.addEventListener("resize",brs);
 })();
 
 goS(1);
+checkExistingAuth();
 </script>
 </body>
 </html>
