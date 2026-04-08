@@ -217,6 +217,79 @@ def generate_video(job_id, audio_path, lyrics, god_name, god_symbol,
         jobs[job_id].update(status="error", message=str(e))
 
 
+# ── AUTH SYSTEM ──────────────────────────────────────────────
+import hashlib, secrets as _secrets, json as _json
+
+# Load saved credentials or use defaults
+_creds_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "credentials.json")
+
+def _load_creds():
+    if os.path.exists(_creds_file):
+        try:
+            return _json.load(open(_creds_file))
+        except: pass
+    return {"Sumantjha474": hashlib.sha256("Sumantjha474".encode()).hexdigest()}
+
+def _save_creds():
+    with open(_creds_file, 'w') as f:
+        _json.dump(CREDENTIALS, f)
+
+def _hash(p):
+    return hashlib.sha256(p.encode()).hexdigest()
+
+CREDENTIALS = _load_creds()
+SESSIONS = {}  # token -> username
+
+@app.route("/login", methods=["POST","OPTIONS"])
+def login():
+    if request.method == "OPTIONS": return jsonify({"ok":True})
+    data     = request.json or {}
+    username = data.get("username","").strip()
+    password = data.get("password","")
+    stored   = CREDENTIALS.get(username)
+    if stored and stored == _hash(password):
+        token = _secrets.token_hex(32)
+        SESSIONS[token] = username
+        return jsonify({"success":True, "token":token, "username":username})
+    return jsonify({"success":False, "error":"Username ya password galat hai!"}), 401
+
+@app.route("/logout", methods=["POST","OPTIONS"])
+def logout():
+    if request.method == "OPTIONS": return jsonify({"ok":True})
+    token = (request.json or {}).get("token","")
+    SESSIONS.pop(token, None)
+    return jsonify({"success":True})
+
+@app.route("/check-auth", methods=["POST","OPTIONS"])
+def check_auth():
+    if request.method == "OPTIONS": return jsonify({"ok":True})
+    token = (request.json or {}).get("token","")
+    if token in SESSIONS:
+        return jsonify({"valid":True, "username":SESSIONS[token]})
+    return jsonify({"valid":False}), 401
+
+@app.route("/change-password", methods=["POST","OPTIONS"])
+def change_password():
+    if request.method == "OPTIONS": return jsonify({"ok":True})
+    data     = request.json or {}
+    token    = data.get("token","")
+    old_pass = data.get("old_password","")
+    new_pass = data.get("new_password","")
+    if token not in SESSIONS:
+        return jsonify({"success":False, "error":"Please login first"}), 401
+    username = SESSIONS[token]
+    if CREDENTIALS.get(username) != _hash(old_pass):
+        return jsonify({"success":False, "error":"Purana password galat hai!"}), 400
+    if len(new_pass) < 6:
+        return jsonify({"success":False, "error":"New password min 6 characters ka hona chahiye!"}), 400
+    CREDENTIALS[username] = _hash(new_pass)
+    _save_creds()
+    return jsonify({"success":True, "message":"Password change ho gaya! ✅"})
+
+def _require_auth(data):
+    token = (data or {}).get("token","")
+    return token in SESSIONS
+
 # ── ROUTES ───────────────────────────────────────────────────
 @app.route("/")
 def index():
@@ -235,10 +308,9 @@ def ping():
 def generate():
     if request.method == "OPTIONS":
         return jsonify({"ok": True})
-    data    = request.json
-    # Auth check
-    if not require_auth():
-        return jsonify({"error":"Unauthorized — please login"}), 401
+    data = request.json
+    if not _require_auth(data):
+        return jsonify({"error":"Unauthorized — please login first"}), 401
     job_id  = str(uuid.uuid4())[:8]
     jobs[job_id] = {"status": "queued", "progress": 0,
                     "message": "Queue mein hai...", "path": None}
